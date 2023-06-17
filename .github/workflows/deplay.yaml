@@ -1,0 +1,44 @@
+name: Deploy to cloudtype
+on:
+  push:
+    branches:
+      - main   # main 브랜치에 push 하면 작동한다는 뜻 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest   # 리눅스 우분투 OS에 배포할 것이라는 뜻 
+    steps:       # 배포 과정 단계별 정리 
+      - name: Checkout    # github actions를 사용
+        uses: actions/checkout@v2
+      - name: Connect deploy key   # 우리가 지정했던 CLOUDTYPE_TOKEN, GHP_TOKEN 활용  
+        uses: cloudtype-github-actions/connect@v1
+        with:
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          ghtoken: ${{ secrets.GHP_TOKEN }}
+      - name: Deploy  # CLOUDTYPE 서버에 접속해서, django 빌드/실행 커맨드 입력!
+        uses: cloudtype-github-actions/deploy@v1
+        with:
+          token: ${{ secrets.CLOUDTYPE_TOKEN }}
+          project: styu17/snulion_week11
+          stage: main
+          yaml: >
+            name: snulion-week12
+
+            app: python@3.9
+
+            options:
+              env: 
+                - name: SECRET_KEY
+                  value: 5xeuu%71e@wu=#f@^xs6fp0d$adc@c7dvk@8-gfb%0r@ynpe*-
+                - name: DJANGO_SUPERUSER_USERNAME
+                  value: yejin
+                - name: DJANGO_SUPERUSER_PASSWORD
+                  value: 1234
+                - name: DJANGO_SUPERUSER_EMAIL
+                  value: yejin@admin.io
+              ports: 8000
+              start: python3 manage.py runserver 0:8000
+              prestart: python3 manage.py makemigrations && python3 manage.py migrate && python3 manage.py createsuperuser --noinput --skip-checks
+            context:
+              git:
+                url: git@github.com:${{ github.repository }}.git
+                ref: ${{ github.ref }}
